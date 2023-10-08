@@ -436,12 +436,6 @@ def login_panel(
         db.close()
 
         cookie_manager.delete(cookie_name)
-        # st.session_state["logout"] = True
-        # st.session_state["name"] = None
-        # st.session_state["username"] = None
-        # st.session_state["authentication_status"] = None
-        # st.session_state["login_connection_time"] = None
-        # st.session_state["messages"] = []
 
         for key in st.session_state.keys():
             if key in ["name", "messages", "qa_doc_api_key_set", "userdata", "qa_doc_uploaded",
@@ -451,27 +445,6 @@ def login_panel(
                 st.session_state[key] = True
             else:
                 pass
-
-        # for key in st.session_state.keys():
-        #     if key == "logout":
-        #         st.session_state[key] = True
-        #     elif key == "messages":
-        #         st.session_state[key] = []
-        #     elif key in ["FormSubmitter:register_form-Submit", "delete", "forgot_password"]:
-        #         pass
-        #     else:
-        #         st.session_state[key] = None
-
-        # st.session_state["name"] = None
-        # st.session_state["username"] = None
-        # st.session_state["authentication_status"] = None
-        # st.session_state["login_connection_time"] = None
-        # st.session_state["comments"] = []
-
-        # delete all keys
-        # for key in st.session_state.keys():
-        #     print(key)
-        #     del st.session_state[key]
 
         print(st.session_state)
         return None
@@ -610,6 +583,10 @@ def main() -> None:
         firebase_admin.initialize_app(cred)
     print(f"firebase_admin._apps already initialized")
     st.session_state['first_login'] = True
+    # disabled the left side bar
+    if "visibility" not in st.session_state:
+        st.session_state.visibility = "visible"
+        st.session_state.disabled = True
     print(f"after firebase admin:{st.session_state}")
     pretty_title(TITLE)
     cookie_manager, cookie_name = stx.CookieManager(), "login_cookie"
@@ -627,8 +604,6 @@ def main() -> None:
             Page("app.py", "Home"),
             Page("simple_chat.py", "Virtual Insurance Agent"),
             Page("qa_docs.py", "QA Documents"),
-            # Page("test_upload.py", "test QA Documents"),
-            # Page("orignial_qa_doc.py", "original QA Documents"),
         ])
 
     return app()
