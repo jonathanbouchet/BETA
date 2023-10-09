@@ -77,109 +77,116 @@ def new_qa():
     entry point of the QA doc
     :return:
     """
-    st.title("Reflexive AI")
-    st.header("QA documents")
 
-    if 'qa_doc_api_key_set' not in st.session_state:
-            st.session_state.qa_doc_api_key_set = False
-            st.session_state.qa_doc_uploaded = False
+    if not st.session_state["logout"] or st.session_state["authentication_status"] is True:
+        print(f"start of new_qa, st.session.state --> {st.session_state}")
 
-    if st.sidebar.button("Logout"):
-        db = firestore.client()  # log in table
-        obj = {"name": st.session_state["name"],
-               "username": st.session_state["username"],
-               "login_connection_time": st.session_state["login_connection_time"],
-               "messages": st.session_state["messages"],
-               "created_at": datetime.now()}
-        doc_ref = db.collection(u'users_app').document()  # create a new document.ID
-        doc_ref.set(obj)  # add obj to collection
-        db.close()
+        if 'qa_doc_api_key_set' not in st.session_state:
+                st.session_state.qa_doc_api_key_set = False
+                st.session_state.qa_doc_uploaded = False
+        if 'messages' not in st.session_state:
+            st.session_state["messages"] = []
 
-        st.empty()  # clear page
-        print(f"in logout from QA doc:{st.session_state}")
-        for key in st.session_state.keys():
-            print(f"{key} --> {st.session_state[key]}")
+        if st.sidebar.button("Logout"):
+            db = firestore.client()  # log in table
+            obj = {"name": st.session_state["name"],
+                   "username": st.session_state["username"],
+                   "login_connection_time": st.session_state["login_connection_time"],
+                   "messages": st.session_state["messages"],
+                   "created_at": datetime.now()}
+            doc_ref = db.collection(u'users_app').document()  # create a new document.ID
+            doc_ref.set(obj)  # add obj to collection
+            db.close()
 
-        # delete all keys
-        for key in st.session_state.keys():
-            del st.session_state[key]
+            st.empty()  # clear page
+            print(f"in logout from QA doc:{st.session_state}")
+            for key in st.session_state.keys():
+                print(f"{key} --> {st.session_state[key]}")
 
-        print(st.session_state)
-        return None
+            st.session_state["logout"] = True
+            st.session_state["name"] = None
+            st.session_state["username"] = None
+            st.session_state["authentication_status"] = None
+            st.session_state["login_connection_time"] = None
+            st.session_state['messages'] = []
+            return st.session_state["logout"]
 
-    if st.sidebar.button("Download transcripts"):
-        download_transcript()
+        st.title("Reflexive AI")
+        st.header("QA documents")
 
-    model = st.sidebar.selectbox(
-        label=":blue[MODEL]",
-        options=["gpt-3.5-turbo",
-                 "ft:gpt-3.5-turbo-0613:osc:finetuned-v6:80vd3iOe",
-                 "gpt-4"])
+        if st.sidebar.button("Download transcripts"):
+            download_transcript()
 
-    systemprompt = st.sidebar.selectbox(
-        label=":blue[AI Persona]",
-        options=["Simple AI Assistant",
-                 "mini questionnaire",
-                 "full questionnaire",
-                 "Insurance Advisor"])
+        model = st.sidebar.selectbox(
+            label=":blue[MODEL]",
+            options=["gpt-3.5-turbo",
+                     "ft:gpt-3.5-turbo-0613:osc:finetuned-v6:80vd3iOe",
+                     "gpt-4"])
 
-    show_tokens = st.sidebar.radio(label=":blue[Display tokens]", options=('Yes', 'No'))
+        systemprompt = st.sidebar.selectbox(
+            label=":blue[AI Persona]",
+            options=["Simple AI Assistant",
+                     "mini questionnaire",
+                     "full questionnaire",
+                     "Insurance Advisor"])
 
-    # Set API key if not yet
-    openai_api_key = st.sidebar.text_input(
-        ":blue[API-KEY]",
-        placeholder="Paste your OpenAI API key here",
-        type="password")
+        show_tokens = st.sidebar.radio(label=":blue[Display tokens]", options=('Yes', 'No'))
 
-    if openai_api_key:
+        # Set API key if not yet
+        openai_api_key = st.sidebar.text_input(
+            ":blue[API-KEY]",
+            placeholder="Paste your OpenAI API key here",
+            type="password")
 
-        # openai.api_key = openai_api_key
-        os.environ["OPENAI_API_KEY"] = openai_api_key
+        if openai_api_key:
 
-        if "openai_model" not in st.session_state:
-            st.session_state["openai_model"] = model
+            # openai.api_key = openai_api_key
+            os.environ["OPENAI_API_KEY"] = openai_api_key
 
-        uploaded_files = st.sidebar.file_uploader(
-            label="Upload PDF files", type=["pdf"], accept_multiple_files=True
-        )
-        if not uploaded_files:
-            st.info("Please upload PDF documents to continue.")
-            st.stop()
-        st.session_state.qa_doc_uploaded = True
+            if "openai_model" not in st.session_state:
+                st.session_state["openai_model"] = model
 
-        tmp_retriever = get_document(uploaded_files, openai_api_key)
-        retriever = tmp_retriever.as_retriever()
+            uploaded_files = st.sidebar.file_uploader(
+                label="Upload PDF files", type=["pdf"], accept_multiple_files=True
+            )
+            if not uploaded_files:
+                st.info("Please upload PDF documents to continue.")
+                st.stop()
+            st.session_state.qa_doc_uploaded = True
 
-        # Setup memory for contextual conversation
-        msgs = StreamlitChatMessageHistory()
-        memory = ConversationBufferMemory(memory_key="chat_history", chat_memory=msgs, return_messages=True)
+            tmp_retriever = get_document(uploaded_files, openai_api_key)
+            retriever = tmp_retriever.as_retriever()
 
-        # Setup LLM and QA chain
-        llm = ChatOpenAI(
-            model_name=model, temperature=0, streaming=True, openai_api_key=openai_api_key
-        )
-        qa_chain = ConversationalRetrievalChain.from_llm(
-            llm, retriever=retriever, memory=memory, verbose=True
-        )
+            # Setup memory for contextual conversation
+            msgs = StreamlitChatMessageHistory()
+            memory = ConversationBufferMemory(memory_key="chat_history", chat_memory=msgs, return_messages=True)
 
-        if len(msgs.messages) == 0 or st.sidebar.button("Clear message history"):
-            msgs.clear()
-            msgs.add_ai_message("How can I help you?")
+            # Setup LLM and QA chain
+            llm = ChatOpenAI(
+                model_name=model, temperature=0, streaming=True, openai_api_key=openai_api_key
+            )
+            qa_chain = ConversationalRetrievalChain.from_llm(
+                llm, retriever=retriever, memory=memory, verbose=True
+            )
 
-        avatars = {"human": "user", "ai": "assistant"}
-        for msg in msgs.messages:
-            st.chat_message(avatars[msg.type]).write(msg.content)
+            if len(msgs.messages) == 0 or st.sidebar.button("Clear message history"):
+                msgs.clear()
+                msgs.add_ai_message("How can I help you?")
 
-        if user_query := st.chat_input(placeholder="Ask me anything!"):
-            st.chat_message("user").write(user_query)
+            avatars = {"human": "user", "ai": "assistant"}
+            for msg in msgs.messages:
+                st.chat_message(avatars[msg.type]).write(msg.content)
 
-            with st.chat_message("assistant"):
-                retrieval_handler = PrintRetrievalHandler(st.container())
-                stream_handler = StreamHandler(st.empty())
-                response = qa_chain.run(user_query, callbacks=[retrieval_handler, stream_handler])
+            if user_query := st.chat_input(placeholder="Ask me anything!"):
+                st.chat_message("user").write(user_query)
 
-            print(f"current message:{st.chat_message}")
-            print(f"current messages:{msgs}")
+                with st.chat_message("assistant"):
+                    retrieval_handler = PrintRetrievalHandler(st.container())
+                    stream_handler = StreamHandler(st.empty())
+                    response = qa_chain.run(user_query, callbacks=[retrieval_handler, stream_handler])
+
+                print(f"current message:{st.chat_message}")
+                print(f"current messages:{msgs}")
 
 
 # Run the Streamlit app

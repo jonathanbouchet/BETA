@@ -242,7 +242,7 @@ def download_transcript() -> None:
     now = datetime.now()
     print(f"Current time is {now}")
 
-    st.download_button(
+    st.sidebar.download_button(
         label="Download data as pdf",
         data=data_pdf,
         file_name=f"reflexive.ai-virtual-assistant-{now.strftime('%d-%m-%Y-%H-%M-%S')}.pdf",

@@ -437,16 +437,11 @@ def login_panel(
 
         cookie_manager.delete(cookie_name)
 
-        for key in st.session_state.keys():
-            if key in ["name", "messages", "qa_doc_api_key_set", "userdata", "qa_doc_uploaded",
-                       "login_connection_time", "username"]:
-                del st.session_state[key]
-            elif key == "logout":
-                st.session_state[key] = True
-            else:
-                pass
-
-        print(st.session_state)
+        st.session_state["logout"] = True
+        st.session_state["name"] = None
+        st.session_state["username"] = None
+        st.session_state["authentication_status"] = None
+        st.session_state["login_connection_time"] = None
         return None
 
     st.write(f"Welcome, *{st.session_state['name']}*!")
@@ -521,8 +516,8 @@ def not_logged_in(
 
 def app() -> None:
     """This is a part of a Streamlit app which is only visible if the user is logged in."""
-    if st.session_state['logout'] is True:
-        return None
+    # if st.session_state['logout'] is True:
+    #     return None
 
     if "visibility" not in st.session_state:
         st.session_state.visibility = "visible"
@@ -584,9 +579,9 @@ def main() -> None:
     print(f"firebase_admin._apps already initialized")
     st.session_state['first_login'] = True
     # disabled the left side bar
-    if "visibility" not in st.session_state:
-        st.session_state.visibility = "visible"
-        st.session_state.disabled = True
+    # if "visibility" not in st.session_state:
+    #     st.session_state.visibility = "visible"
+    #     st.session_state.disabled = True
     print(f"after firebase admin:{st.session_state}")
     pretty_title(TITLE)
     cookie_manager, cookie_name = stx.CookieManager(), "login_cookie"
