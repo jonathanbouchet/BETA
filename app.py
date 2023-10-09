@@ -49,8 +49,6 @@ logger.setLevel(logging.INFO)
 
 
 TITLE: Final = "REFLEXIVE.AI"
-img = Image.open("reflexive_ai_logo.png")
-st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
 
 
 POST_REQUEST_URL_BASE: Final = "https://identitytoolkit.googleapis.com/v1/accounts:"
@@ -560,7 +558,8 @@ def main() -> None:
     e-mail domain. The Firebase REST API and JWT cookies are used for authentication. If the user
     is not logged in, no content other than the login form gets shown.
     """
-
+    img = Image.open("reflexive_ai_logo.png")
+    st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
     # noinspection PyProtectedMember
     if not firebase_admin._apps:
         print(f"firebase_admin._apps initialization")
