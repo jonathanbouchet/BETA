@@ -557,7 +557,15 @@ def main() -> None:
     is not logged in, no content other than the login form gets shown.
     """
     img = Image.open("reflexive_ai_logo.png")
-    st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
+    st.set_page_config(
+        page_title="Reflexive.ai",
+        page_icon=img,
+        initial_sidebar_state="collapsed",
+        menu_items={
+            'Get Help': "https://reflexive.ai",
+            'Report a bug': "https://reflexive.ai",
+            'About': "# REFLEXIVE.AI\n ## VIRTUAL AGENTS TO HELP YOU GROW YOUR BUSINESS \nhttps://reflexive.ai"
+        })
 
     # noinspection PyProtectedMember
     if not firebase_admin._apps:
