@@ -84,15 +84,18 @@ def new_qa():
         if 'qa_doc_api_key_set' not in st.session_state:
                 st.session_state.qa_doc_api_key_set = False
                 st.session_state.qa_doc_uploaded = False
-        if 'messages' not in st.session_state:
-            st.session_state["messages"] = []
+        if 'messages_chat' not in st.session_state:
+            st.session_state["messages_chat"] = []
+        if 'messages_QA' not in st.session_state:
+            st.session_state["messages_QA"] = []
 
         if st.sidebar.button("Logout"):
             db = firestore.client()  # log in table
             obj = {"name": st.session_state["name"],
                    "username": st.session_state["username"],
                    "login_connection_time": st.session_state["login_connection_time"],
-                   "messages": st.session_state["messages"],
+                   "messages_chat": st.session_state["messages_chat"],
+                   "messages_QA": st.session_state["messages_QA"],
                    "created_at": datetime.now()}
             doc_ref = db.collection(u'users_app').document()  # create a new document.ID
             doc_ref.set(obj)  # add obj to collection
@@ -108,7 +111,8 @@ def new_qa():
             st.session_state["username"] = None
             st.session_state["authentication_status"] = None
             st.session_state["login_connection_time"] = None
-            st.session_state['messages'] = []
+            st.session_state['messages_chat'] = []
+            st.session_state['messages_QA'] = []
             return st.session_state["logout"]
 
         st.title("Reflexive AI")

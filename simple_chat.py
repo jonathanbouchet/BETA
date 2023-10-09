@@ -24,8 +24,10 @@ def simple_chat():
     if not st.session_state["logout"] or st.session_state["authentication_status"] is True:
 
         # initialization
-        if 'messages' not in st.session_state:
-            st.session_state["messages"] = []
+        if 'messages_chat' not in st.session_state:
+            st.session_state["messages_chat"] = []
+        if 'messages_QA' not in st.session_state:
+            st.session_state["messages_QA"] = []
         if 'total_tokens' not in st.session_state:
             st.session_state.total_tokens = 0
 
@@ -34,7 +36,8 @@ def simple_chat():
             obj = {"name": st.session_state["name"],
                    "username": st.session_state["username"],
                    "login_connection_time": st.session_state["login_connection_time"],
-                   "messages": st.session_state["messages"],
+                   "messages_chat": st.session_state["messages_chat"],
+                   "messages_QA": st.session_state["messages_QA"],
                    "created_at": datetime.now()}
             doc_ref = db.collection(u'users_app').document()  # create a new document.ID
             doc_ref.set(obj)  # add obj to collection
@@ -54,7 +57,8 @@ def simple_chat():
             st.session_state["username"] = None
             st.session_state["authentication_status"] = None
             st.session_state["login_connection_time"] = None
-            st.session_state['messages'] = []
+            st.session_state['messages_chat'] = []
+            st.session_state['messages_QA'] = []
             st.session_state.total_tokens = 0
             print(st.session_state)
             return st.session_state["logout"]
@@ -95,7 +99,7 @@ def simple_chat():
 
             # initialization of the session_state
             # if "messages" not in st.session_state:
-            if len(st.session_state["messages"]) == 0:
+            if len(st.session_state["messages_chat"]) == 0:
                 print(f"system prompt from drop down: {systemprompt}")
                 if systemprompt == "full questionnaire":
                     template = full_questionnaire()
@@ -106,7 +110,7 @@ def simple_chat():
                 else:
                     template = ai_bot()
                 print(f"template chosen : {template}")
-                st.session_state['messages'] = [
+                st.session_state['messages_chat'] = [
                     {"role": "system", "content": template}
                 ]
                 # greetings message
@@ -114,12 +118,12 @@ def simple_chat():
                     "role": "assistant",
                     "content": "What can I do for you ?"
                 }
-                st.session_state["messages"].append(greetings)
+                st.session_state["messages_chat"].append(greetings)
             # if "openai_model" not in st.session_state:
             #     st.session_state["openai_model"] = MODEL
 
             # display chat messages from history on app rerun
-            for message in st.session_state.messages:
+            for message in st.session_state.messages_chat:
                 # don't print the system content
                 if message["role"] != "system":
                     with st.chat_message(message["role"]):
@@ -136,7 +140,7 @@ def simple_chat():
                         tokens_count = st.empty()
                         tokens_count.caption(f"""query used {prompt_tokens} tokens """)
                 # add user message to chat history
-                st.session_state["messages"].append({"role": "user", "content": prompt})
+                st.session_state["messages_chat"].append({"role": "user", "content": prompt})
                 logging.info(f"[user]:{prompt}, # tokens:{prompt}")
 
                 with st.chat_message("assistant"):
@@ -147,7 +151,7 @@ def simple_chat():
                             temperature=0,
                             stream=True,
                             messages=[
-                                {"role": m["role"], "content": m["content"]} for m in st.session_state["messages"]]
+                                {"role": m["role"], "content": m["content"]} for m in st.session_state["messages_chat"]]
                     ):
                         full_response += response.choices[0].delta.get("content", "")
                         message_placeholder.markdown(full_response + "▌")
@@ -158,7 +162,7 @@ def simple_chat():
                         tokens_count = st.empty()
                         tokens_count.caption(f"""assistant used {assistant_tokens} tokens """)
                 # add assistant response to chat history
-                st.session_state["messages"].append({"role": "assistant", "content": full_response})
+                st.session_state["messages_chat"].append({"role": "assistant", "content": full_response})
                 logging.info(f"[assistant]:{prompt}, # tokens:{full_response}")
 
 

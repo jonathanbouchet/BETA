@@ -47,11 +47,7 @@ logger = logging.getLogger()
 # Setting the threshold of logger to DEBUG
 logger.setLevel(logging.INFO)
 
-
 TITLE: Final = "REFLEXIVE.AI"
-img = Image.open("reflexive_ai_logo.png")
-st.set_page_config(page_title="Reflexive.ai", page_icon=img)
-
 
 POST_REQUEST_URL_BASE: Final = "https://identitytoolkit.googleapis.com/v1/accounts:"
 post_request = partial(
@@ -429,7 +425,8 @@ def login_panel(
         obj = {"name": st.session_state["name"],
                "username": st.session_state["username"],
                "login_connection_time": st.session_state["login_connection_time"],
-               "messages": st.session_state["messages"],
+               "messages_chat": st.session_state["messages_chat"],
+               "messages_QA": st.session_state["messages_QA"],
                "created_at": datetime.now()}
         doc_ref = db.collection(u'users_app').document()  # create a new document.ID
         doc_ref.set(obj)  # add obj to collection
@@ -442,6 +439,8 @@ def login_panel(
         st.session_state["username"] = None
         st.session_state["authentication_status"] = None
         st.session_state["login_connection_time"] = None
+        st.session_state['messages_chat'] = []
+        st.session_state['messages_QA'] = []
         return None
 
     st.write(f"Welcome, *{st.session_state['name']}*!")
@@ -479,10 +478,11 @@ def not_logged_in(
 
     early_return = True
     # In case of a first run, pre-populate missing session state arguments
-    for key in {"name", "username", "login_connection_time", "authentication_status", "logout", "messages", "userdata"}.difference(
+    for key in {"name", "username", "login_connection_time", "authentication_status", "logout",
+                "messages_chat", "messages_QA", "userdata"}.difference(
             set(st.session_state)
     ):
-        if key in ["messages"]:
+        if key in ["messages_chat", "messages_QA"]:
             st.session_state[key] = []
         else:
             st.session_state[key] = None
@@ -556,6 +556,8 @@ def main() -> None:
     e-mail domain. The Firebase REST API and JWT cookies are used for authentication. If the user
     is not logged in, no content other than the login form gets shown.
     """
+    img = Image.open("reflexive_ai_logo.png")
+    st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
 
     # noinspection PyProtectedMember
     if not firebase_admin._apps:
@@ -578,10 +580,6 @@ def main() -> None:
         firebase_admin.initialize_app(cred)
     print(f"firebase_admin._apps already initialized")
     st.session_state['first_login'] = True
-    # disabled the left side bar
-    # if "visibility" not in st.session_state:
-    #     st.session_state.visibility = "visible"
-    #     st.session_state.disabled = True
     print(f"after firebase admin:{st.session_state}")
     pretty_title(TITLE)
     cookie_manager, cookie_name = stx.CookieManager(), "login_cookie"
