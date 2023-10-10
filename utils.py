@@ -1,6 +1,7 @@
 import json
 import streamlit as st
 from datetime import datetime
+import openai
 import tiktoken
 from firebase_admin import firestore
 from firebase_admin import auth
@@ -291,3 +292,28 @@ def download_user_data(current_session_state: list) -> None:
         mime="application/json",
         data=json_string,
     )
+
+
+def summarize_chat(chats: list, openai_key: str) -> str:
+    """
+    sumamrize the previous interaction of the user on the app
+    :param chats:
+    :return: string
+    """
+    openai.api_key = openai_key
+    completion = openai.ChatCompletion.create(
+        model="gpt-4",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": str(chats)
+            },
+            {
+                "role": "user",
+                "content": "summarize the following interaction between the assistant and the user"
+            }
+
+        ],
+    )
+    return completion["choices"][0]["message"]["content"]
