@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 from datetime import datetime
 import tiktoken
@@ -48,6 +49,30 @@ def insurance_advisor():
     return """
     You are a kind and professional insurance agent helper bot collecting \
     a life insurance applicant's relevant information for underwriting. 
+    """
+
+
+def simple_questionnaire():
+    """
+    reflexive questions ; small version ; testing
+    :return:
+    """
+    return """
+    You are a kind and professional insurance agent helper bot collecting \
+    a life insurance applicant's relevant information for underwriting. 
+    Do not give additional questions in your answers, just answer the user answer and stop.
+    All questions must be asked, no matter how many times the user responds with "no". 
+    Validate each of the fields as being within normal human ranges.
+    Do not show any intermediate calculations or processing steps.
+    Do not assume any information on behalf of the user.
+    Along the way do not provide any commentary regarding the perceived health of the customer. 
+    Share a summary of the key information at the end of the conversation.
+    Collect the information in a conversational question and answer format.
+
+    Collect the following information:
+    0. **Basic Info**: Please provide your full legal name and date of birth.
+
+    1. **Physical Stats**: What is your height and weight?
     """
 
 
@@ -247,3 +272,22 @@ def download_transcript() -> None:
         data=data_pdf,
         file_name=f"reflexive.ai-virtual-assistant-{now.strftime('%d-%m-%Y-%H-%M-%S')}.pdf",
         mime="application/octet-stream")
+
+
+def download_user_data(current_session_state: list) -> None:
+    """
+    :return:
+    """
+    print("in download_user_data")
+    now = datetime.now()
+    print(f"Current time is {now}")
+    user_data_dict = current_session_state["pydantic_life_insurance_model"].dict()
+    json_string = json.dumps(user_data_dict)
+    st.json(json_string, expanded=True)
+
+    st.download_button(
+        label="Download USER DATA JSON",
+        file_name=f"reflexive.ai-user-data-{now.strftime('%d-%m-%Y-%H-%M-%S')}.json",
+        mime="application/json",
+        data=json_string,
+    )

@@ -29,7 +29,7 @@ import requests
 import streamlit as st
 from email_validator import EmailNotValidError, validate_email
 from firebase_admin import auth
-from st_pages import Page, show_pages
+from st_pages import Page, show_pages, hide_pages
 from firebase_admin import firestore
 from PIL import Image
 from utils import get_user_data
@@ -443,6 +443,7 @@ def login_panel(
         st.session_state["login_connection_time"] = None
         st.session_state['messages_chat'] = []
         st.session_state['messages_QA'] = []
+
         return None
 
     st.write(f"Welcome, *{st.session_state['name']}*!")
@@ -518,12 +519,9 @@ def not_logged_in(
 
 def app() -> None:
     """This is a part of a Streamlit app which is only visible if the user is logged in."""
-    # if st.session_state['logout'] is True:
-    #     return None
-
-    if "visibility" not in st.session_state:
-        st.session_state.visibility = "visible"
-        st.session_state.disabled = False
+    if st.session_state["first_login"] is False:
+        hide_pages([Page("simple_chat.py", "Virtual Insurance Agent"),
+                    Page("qa_docs.py", "QA Documents")])
 
     st.subheader('Home page')
     st.write(":green[You are logged in!]")
@@ -560,6 +558,9 @@ def main() -> None:
     """
     img = Image.open("reflexive_ai_logo.png")
     st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
+    hide_pages([Page("simple_chat.py", "Virtual Insurance Agent"),
+                Page("qa_docs.py", "QA Documents")])
+
     # noinspection PyProtectedMember
     if not firebase_admin._apps:
         print(f"firebase_admin._apps initialization")
@@ -581,10 +582,6 @@ def main() -> None:
         firebase_admin.initialize_app(cred)
     print(f"firebase_admin._apps already initialized")
     st.session_state['first_login'] = True
-    # disabled the left side bar
-    # if "visibility" not in st.session_state:
-    #     st.session_state.visibility = "visible"
-    #     st.session_state.disabled = True
     print(f"after firebase admin:{st.session_state}")
     pretty_title(TITLE)
     cookie_manager, cookie_name = stx.CookieManager(), "login_cookie"

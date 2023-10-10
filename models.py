@@ -1,34 +1,29 @@
 from pydantic import BaseModel, Field, ValidationError
 from typing import Union
-from langchain.chains import create_tagging_chain_pydantic
+from langchain.chains import create_tagging_chain_pydantic, create_extraction_chain_pydantic
+from langchain.chat_models import ChatOpenAI
+from pydantic import Extra
+from datetime import datetime
 
 
 class Tags0(BaseModel):
     """
     pydantic model for user's data
     """
-    first_name: Union[str, None]
-    last_name: Union[str, None]
-    age: Union[int, None]
-    weight: Union[float, None]
-    height: Union[float, None]
-    weight_unit: Union[str, None]
-    height_unit: Union[str, None]
-    BMI: Union[float, None]
-
-
-class Tags1(BaseModel):
-    """
-    pydantic model for user's data
-    """
+    full_name: str | None = Field(
+        description="this is the full name of the user",
+        default=None)
     first_name: str | None = Field(
         description="this is the first name of the user",
         default=None)
     last_name:  str | None = Field(
         description="this is the last name of the user",
         default=None)
-    age:  float | None = Field(
+    age: int | None = Field(
         description="this is the age of the user",
+        default=None)
+    date_of_birth: str | None = Field(
+        description="this is the date of birth of the user",
         default=None)
     weight:  float | None = Field(
         description="this is the weight of the user",
@@ -45,20 +40,67 @@ class Tags1(BaseModel):
     BMI:  float | None = Field(
         description="this is the BMI of the user",
         default=None)
+    class Config:
+        extra = Extra.allow
 
-    # @validator("age")
-    # def ensure_age_over_18(cls, v):
-    #     if v < 18:
-    #         raise ValueError("age must be 18 or older")
-    #     elif v > 150:
-    #         raise ValueError("age must be < 150")
-    #     return v
-    #
-    # @validator("age", "income", "total_household_debt", "total_household_savings")
-    # def ensure_positive_value(cls, v):
-    #     if v < 0:
-    #         raise ValueError("must be positive number")
-    #     return v
+
+def add_bmi(user_data: dict) -> dict:
+    """calculate BMI as w / h*h where w = weight in kilograms and h = height in meter
+    :params user_data: dict
+    "returns: same user data with BMI added
+    """
+    height = user_data["height"]
+    weight = user_data["weight"]
+    if user_data["height_unit"] == "cm":
+        height /= 100
+    if user_data["height_unit"] == '"' or user_data["height_unit"] == "'":
+        tmp = str(height).split(".")
+        feet = int(tmp[0])
+        inches = int(tmp[1])
+        height = 2.54 * (feet*12 + inches) / 100
+    if user_data["weight_unit"] == "lbs":
+        weight /= 2.205
+    bmi = weight / (height * height)
+    # user_data['bmi'] = weight / (height * height)
+    return bmi
+
+
+def add_age(user_data: dict) -> dict:
+    dob = user_data['date_of_birth']
+    age = None
+    if dob:
+        dob_datetime = datetime.strptime(dob, "%m/%d/%Y")
+        age = int(datetime.now().year - dob_datetime.year)
+        # user_data["age"] = int(age)
+    return age
+
+
+def extract_data(assistant_summary: str, openai_key) -> dict:
+    """
+    run langchain tagging chain to extract data from summary according a pydantic model
+    :param assistant_summary:
+    :return:
+    """
+
+    llm_extraction = ChatOpenAI(temperature=0,
+                                model="gpt-4",
+                                openai_api_key=openai_key)
+
+    # first we extract the summary data
+    user_summary_extraction = create_extraction_chain_pydantic(Tags0, llm_extraction)
+    extracted_data = user_summary_extraction.run(assistant_summary)
+    print(f"Pydantic data extracted:{extracted_data}")
+    single_extracted_data = extracted_data[0]
+    print(f"single Pydantic data extracted:{extracted_data}")
+    single_extracted_data_dict = dict(single_extracted_data)
+    print(f"data dict extracted:{single_extracted_data_dict}")
+    current_bmi = add_bmi(single_extracted_data_dict)
+    current_age = add_age(single_extracted_data_dict)
+    single_extracted_data.age = current_age
+    single_extracted_data.BMI = current_bmi
+    print(f"after adding BMI and AGe: {single_extracted_data}")
+
+    return single_extracted_data
 
 
 def check_extracted_data(extracted_data, query) -> None:
@@ -90,18 +132,14 @@ def add_non_empty_details(current_details, new_details):
     return updated_details
 
 
-def filter_response(text_input: str, person, llm, conversation_type: str):
+def filter_response(text_input: str, person, llm,):
     """
     search for fields of the current response with respect a pydantic model
     :params text_input: user's query
     :params person: pydantic model
     :params text_input: llm model for extraction
-    :params conversation_type:
     """
-    if conversation_type == "life_insurance":
-        pydantic_model = Tags1
-    else:
-        return person
+    pydantic_model = Tags0
 
     chain = create_tagging_chain_pydantic(pydantic_model, llm)
     res = chain.run(text_input)
