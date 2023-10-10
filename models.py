@@ -10,34 +10,34 @@ class Tags0(BaseModel):
     """
     pydantic model for user's data
     """
-    full_name: str | None = Field(
+    full_name: Union[str, None] = Field(
         description="this is the full name of the user",
         default=None)
-    first_name: str | None = Field(
+    first_name: Union[str, None] = Field(
         description="this is the first name of the user",
         default=None)
-    last_name:  str | None = Field(
+    last_name: Union[str, None]  = Field(
         description="this is the last name of the user",
         default=None)
-    age: int | None = Field(
+    age: Union[int, None] = Field(
         description="this is the age of the user",
         default=None)
-    date_of_birth: str | None = Field(
+    date_of_birth: Union[str, None] = Field(
         description="this is the date of birth of the user",
         default=None)
-    weight:  float | None = Field(
+    weight: Union[float, None] = Field(
         description="this is the weight of the user",
         default=None)
-    height:  float | None = Field(
+    height: Union[float, None] = Field(
         description="this is the height of the user",
         default=None)
-    weight_unit:  str | None = Field(
+    weight_unit: Union[str, None] = Field(
         description="this is the unit of the weight of the user",
         default=None)
-    height_unit:  str | None = Field(
+    height_unit: Union[str, None]  = Field(
         description="this is the unit of the weight of the user",
         default=None)
-    BMI:  float | None = Field(
+    BMI: Union[float, None] = Field(
         description="this is the BMI of the user",
         default=None)
     class Config:
