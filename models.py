@@ -34,7 +34,7 @@ class Tags0(BaseModel):
     weight_unit: Union[str, None] = Field(
         description="this is the unit of the weight of the user",
         default=None)
-    height_unit: Union[str, None]  = Field(
+    height_unit: Union[str, None] = Field(
         description="this is the unit of the weight of the user",
         default=None)
     BMI: Union[float, None] = Field(
@@ -58,6 +58,8 @@ def add_bmi(user_data: dict) -> dict:
         feet = int(tmp[0])
         inches = int(tmp[1])
         height = 2.54 * (feet*12 + inches) / 100
+    if user_data["height_unit"] == "ft":
+        height *= 30.48 / 100
     if user_data["weight_unit"] == "lbs":
         weight /= 2.205
     bmi = weight / (height * height)
