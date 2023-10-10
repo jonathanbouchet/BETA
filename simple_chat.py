@@ -123,8 +123,8 @@ def simple_chat():
                 if systemprompt == "full questionnaire":
                     template = full_questionnaire()
                 elif systemprompt == "mini questionnaire":
-                    # template = small_questionnaire()
-                    template = simple_questionnaire()
+                    template = small_questionnaire()
+                    # template = simple_questionnaire()
                 elif systemprompt == "Insurance Advisor":
                     template = insurance_advisor()
                 else:
