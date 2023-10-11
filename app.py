@@ -584,7 +584,8 @@ def main() -> None:
         show_pages([
             Page("app.py", "Home"),
             Page("real_chatbot.py", "Virtual Insurance Agent"),
-            Page("simple_chat.py", "Virtual Insurance Agent [test]")
+            Page("simple_chat.py", "Virtual Insurance Agent [test]"),
+            Page("qa_docs.py", "QA Docs")
         ])
 
     return app()
