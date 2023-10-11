@@ -17,6 +17,7 @@ https://firebase.google.com/docs/admin/setup#initialize_the_sdk_in_non-google_en
 
 import math
 import time
+import pathlib
 from contextlib import suppress
 from datetime import datetime, timedelta
 from functools import partial
@@ -606,4 +607,6 @@ def main() -> None:
 
 # Run the Streamlit app
 if __name__ == "__main__":
+    # delete app.log file if exists
+    pathlib.Path("./app.log").unlink(missing_ok=True)
     main()
