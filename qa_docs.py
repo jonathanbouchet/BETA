@@ -1,6 +1,7 @@
 import streamlit as st
 from firebase_admin import firestore
 import os
+import logging
 from datetime import datetime
 from utils import ai_bot, small_questionnaire, full_questionnaire, insurance_advisor, get_tokens, download_transcript
 from PyPDF2 import PdfReader
@@ -12,6 +13,19 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
+
+
+# Create and configure logger
+logging.basicConfig(
+    filename="app.log",
+    format='%(asctime)s %(message)s',
+    filemode='w', )
+
+# Creating an object
+logger = logging.getLogger()
+
+# Setting the threshold of logger to DEBUG
+logger.setLevel(logging.INFO)
 
 
 class StreamHandler(BaseCallbackHandler):
@@ -183,11 +197,15 @@ def new_qa():
 
             if user_query := st.chat_input(placeholder="Ask me anything!"):
                 st.chat_message("user").write(user_query)
+                st.session_state["messages_chat"].append({"role": "user", "content": user_query})
+                logging.info(f"[user]:{user_query}")
 
                 with st.chat_message("assistant"):
                     retrieval_handler = PrintRetrievalHandler(st.container())
                     stream_handler = StreamHandler(st.empty())
                     response = qa_chain.run(user_query, callbacks=[retrieval_handler, stream_handler])
+                    st.session_state["messages_chat"].append({"role": "assistant", "content": response})
+                    logging.info(f"[assistant]:{response}")
 
                 print(f"current message:{st.chat_message}")
                 print(f"current messages:{msgs}")
