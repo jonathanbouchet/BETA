@@ -197,14 +197,14 @@ def new_qa():
 
             if user_query := st.chat_input(placeholder="Ask me anything!"):
                 st.chat_message("user").write(user_query)
-                st.session_state["messages_chat"].append({"role": "user", "content": user_query})
+                st.session_state["messages_QA"].append({"role": "user", "content": user_query})
                 logging.info(f"[user]:{user_query}")
 
                 with st.chat_message("assistant"):
                     retrieval_handler = PrintRetrievalHandler(st.container())
                     stream_handler = StreamHandler(st.empty())
                     response = qa_chain.run(user_query, callbacks=[retrieval_handler, stream_handler])
-                    st.session_state["messages_chat"].append({"role": "assistant", "content": response})
+                    st.session_state["messages_QA"].append({"role": "assistant", "content": response})
                     logging.info(f"[assistant]:{response}")
 
                 print(f"current message:{st.chat_message}")
