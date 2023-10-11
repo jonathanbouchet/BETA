@@ -514,7 +514,7 @@ def not_logged_in(
     # https://playground.streamlit.app/?q=empty-doesnt-work
     # TLDR: element.empty() doesn't actually seem to work with a multi-element container
     # unless you add a sleep after it.
-    # time.sleep(0.01)
+    time.sleep(0.01)
     return not early_return
 
 
