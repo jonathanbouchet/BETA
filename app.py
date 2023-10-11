@@ -17,6 +17,7 @@ https://firebase.google.com/docs/admin/setup#initialize_the_sdk_in_non-google_en
 
 import math
 import time
+import pathlib
 from contextlib import suppress
 from datetime import datetime, timedelta
 from functools import partial
@@ -35,9 +36,6 @@ from PIL import Image
 from utils import get_user_data
 
 TITLE: Final = "REFLEXIVE.AI"
-img = Image.open("reflexive_ai_logo.png")
-st.set_page_config(page_title="Reflexive.ai", page_icon=img)
-
 
 POST_REQUEST_URL_BASE: Final = "https://identitytoolkit.googleapis.com/v1/accounts:"
 post_request = partial(
@@ -545,6 +543,10 @@ def main() -> None:
     e-mail domain. The Firebase REST API and JWT cookies are used for authentication. If the user
     is not logged in, no content other than the login form gets shown.
     """
+    img = Image.open("reflexive_ai_logo.png")
+    st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
+    hide_pages([Page("simple_chat.py", "Virtual Insurance Agent"),
+                Page("qa_docs.py", "QA Documents")])
 
     # noinspection PyProtectedMember
     if not firebase_admin._apps:
@@ -590,4 +592,5 @@ def main() -> None:
 
 # Run the Streamlit app
 if __name__ == "__main__":
+    pathlib.Path("./app.log").unlink(missing_ok=True)
     main()
