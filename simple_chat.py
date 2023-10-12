@@ -6,7 +6,7 @@ from utils import ai_bot, simple_questionnaire, small_questionnaire, full_questi
 from firebase_admin import firestore
 from datetime import datetime
 import logging
-from models import Tags0, filter_response, extract_data
+from models import Tags0, extract_data
 from langchain.chat_models import ChatOpenAI
 
 # Create and configure logger
@@ -87,15 +87,13 @@ def simple_chat():
         model = st.sidebar.selectbox(
             label=":blue[MODEL]",
             options=["gpt-3.5-turbo",
-                     "ft:gpt-3.5-turbo-0613:osc:finetuned-v6:80vd3iOe",
                      "gpt-4"])
 
         systemprompt = st.sidebar.selectbox(
             label=":blue[AI Persona]",
             options=["Simple AI Assistant",
                      "mini questionnaire",
-                     "full questionnaire",
-                     "Insurance Advisor"])
+                     "full questionnaire"])
 
         show_tokens = st.sidebar.radio(label=":blue[Display tokens]", options=('Yes', 'No'))
 
