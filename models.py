@@ -6,6 +6,15 @@ from pydantic import Extra
 from datetime import datetime
 
 
+class Medication(BaseModel):
+    """pydantic model for prescription
+    """
+    name: Union[str, None] = Field(description="the name of the prescription")
+    dosage_quantity: Union[float, None] = Field(description="the quantity of the prescription")
+    dosage_unit: Union[str, None] = Field(description="the unit of the prescription")
+    usage: Union[str, None] = Field(description="the usage of the prescription")
+
+
 class Tags0(BaseModel):
     """
     pydantic model for user's data
@@ -16,7 +25,7 @@ class Tags0(BaseModel):
     first_name: Union[str, None] = Field(
         description="this is the first name of the user",
         default=None)
-    last_name: Union[str, None]  = Field(
+    last_name: Union[str, None] = Field(
         description="this is the last name of the user",
         default=None)
     age: Union[int, None] = Field(
@@ -40,6 +49,16 @@ class Tags0(BaseModel):
     BMI: Union[float, None] = Field(
         description="this is the BMI of the user",
         default=None)
+    had_weight_loss: Union[bool, None] = Field(
+        description="did the user experience weight loss ?",
+        default=None)
+    is_taking_medications: Union[bool, None] = Field(
+        description="did the user have prescription or non-prescription medications?",
+        default=None)
+    medications_details: Union[Medication, None] = Field(
+        description="medications taken by the user",
+        default=None)
+
     class Config:
         extra = Extra.allow
 
@@ -71,9 +90,15 @@ def add_age(user_data: dict) -> dict:
     dob = user_data['date_of_birth']
     age = None
     if dob:
-        dob_datetime = datetime.strptime(dob, "%m/%d/%Y")
-        age = int(datetime.now().year - dob_datetime.year)
-        # user_data["age"] = int(age)
+        try:
+            dob_datetime = datetime.strptime(dob, "%m/%d/%Y")
+            age = int(datetime.now().year - dob_datetime.year)
+        except ValueError:
+            try:
+                dob_datetime = datetime.strptime(dob, "%m/%Y")
+                age = int(datetime.now().year - dob_datetime.year)
+            except ValueError:
+                age = user_data["date_of_birth"]
     return age
 
 

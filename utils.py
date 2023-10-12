@@ -111,6 +111,8 @@ def small_questionnaire():
         d. Pregnancy
         e. Other (if selected ask for description)
       - how much weight have you lost in the past year?
+      
+    5. **Current Medications**: Are you currently taking any prescription or non-prescription medications that have not already been disclosed? (Yes/No, and specify if Yes)
     """
 
 
@@ -255,13 +257,14 @@ def get_pdf(log_file) -> str:
     return fout
 
 
-def download_transcript() -> None:
+def download_transcript(log_name) -> None:
     """
     :return:
     """
     print("in download_transcripts")
-    with open('./app.log') as current_log:
+    with open(f'./{log_name}.log') as current_log:
         data = current_log.read()
+    print(data)
     data_pdf_path = get_pdf(data)
     with open(data_pdf_path, "rb") as pdf_file:
         data_pdf = pdf_file.read()
@@ -271,7 +274,7 @@ def download_transcript() -> None:
     st.sidebar.download_button(
         label="Download data as pdf",
         data=data_pdf,
-        file_name=f"reflexive.ai-virtual-assistant-{now.strftime('%d-%m-%Y-%H-%M-%S')}.pdf",
+        file_name=f"reflexive.ai-virtual-assistant-{log_name}-{now.strftime('%d-%m-%Y-%H-%M-%S')}.pdf",
         mime="application/octet-stream")
 
 
@@ -291,6 +294,7 @@ def download_user_data(current_session_state: list) -> None:
         file_name=f"reflexive.ai-user-data-{now.strftime('%d-%m-%Y-%H-%M-%S')}.json",
         mime="application/json",
         data=json_string,
+        help="download data extracted as JSON file"
     )
 
 

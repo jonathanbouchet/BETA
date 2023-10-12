@@ -1,6 +1,7 @@
 import streamlit as st
 from firebase_admin import firestore
 import os
+import pathlib
 import logging
 from datetime import datetime
 from utils import ai_bot, small_questionnaire, full_questionnaire, insurance_advisor, get_tokens, download_transcript
@@ -13,19 +14,48 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
+from app import VERSION
+
+log_name = "qa"
 
 
-# Create and configure logger
-logging.basicConfig(
-    filename="app.log",
-    format='%(asctime)s %(message)s',
-    filemode='w', )
+def make_logger(name):
+    handler = logging.FileHandler(filename=name + ".log")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    return logger
 
-# Creating an object
-logger = logging.getLogger()
 
-# Setting the threshold of logger to DEBUG
-logger.setLevel(logging.INFO)
+def _get_logger(name):
+    loglevel = logging.INFO
+    l = logging.getLogger(name)
+    if not getattr(l, 'handler_set', None):
+        l.setLevel(loglevel)
+        # h = logging.StreamHandler()
+        h = logging.FileHandler(filename=name + ".log")
+        f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        h.setFormatter(f)
+        l.addHandler(h)
+        l.setLevel(loglevel)
+        l.handler_set = True
+        l.propagate = False
+    return l
+
+#
+# def set_logger(name):
+#
+#     # Create and configure logger
+#     logging.basicConfig(
+#         filename=name,
+#         format='%(asctime)s %(message)s',
+#         filemode='w', )
+#
+#     logger = logging.getLogger()
+#     logger.setLevel(logging.INFO)
 
 
 class StreamHandler(BaseCallbackHandler):
@@ -65,6 +95,7 @@ class PrintRetrievalHandler(BaseCallbackHandler):
 # @st.cache_resource(ttl="1h")
 def get_document(uploaded_files, openai_api_key):
     """
+    :param openai_api_key:
     :param uploaded_files:
     :return:
     """
@@ -96,14 +127,18 @@ def new_qa():
         print(f"start of new_qa, st.session.state --> {st.session_state}")
 
         if 'qa_doc_api_key_set' not in st.session_state:
-                st.session_state.qa_doc_api_key_set = False
-                st.session_state.qa_doc_uploaded = False
+            st.session_state.qa_doc_api_key_set = False
+            st.session_state.qa_doc_uploaded = False
         if 'messages_chat' not in st.session_state:
             st.session_state["messages_chat"] = []
         if 'messages_QA' not in st.session_state:
             st.session_state["messages_QA"] = []
+        if 'total_tokens' not in st.session_state:
+            st.session_state.total_tokens = 0
 
-        if st.sidebar.button("Logout"):
+        st.sidebar.markdown(f"""version {VERSION}""")
+
+        if st.sidebar.button("Logout", help="quit session"):
             db = firestore.client()  # log in table
             obj = {"name": st.session_state["name"],
                    "username": st.session_state["username"],
@@ -132,29 +167,25 @@ def new_qa():
         st.title("Reflexive AI")
         st.header("QA documents")
 
-        if st.sidebar.button("Download transcripts"):
-            download_transcript()
+        if st.sidebar.button("Download transcripts", help="download the chat history with the agent"):
+            download_transcript(log_name)
 
         model = st.sidebar.selectbox(
             label=":blue[MODEL]",
             options=["gpt-3.5-turbo",
-                     "ft:gpt-3.5-turbo-0613:osc:finetuned-v6:80vd3iOe",
-                     "gpt-4"])
+                     "gpt-4"],
+            help="openAI model(GPT-4 recommended)")
 
-        systemprompt = st.sidebar.selectbox(
-            label=":blue[AI Persona]",
-            options=["Simple AI Assistant",
-                     "mini questionnaire",
-                     "full questionnaire",
-                     "Insurance Advisor"])
-
-        show_tokens = st.sidebar.radio(label=":blue[Display tokens]", options=('Yes', 'No'))
+        show_tokens = st.sidebar.radio(label=":blue[Display tokens]",
+                                       options=('Yes', 'No'),
+                                       help="show the number of tokens used by the LLM")
 
         # Set API key if not yet
         openai_api_key = st.sidebar.text_input(
             ":blue[API-KEY]",
             placeholder="Paste your OpenAI API key here",
-            type="password")
+            type="password",
+            help="format is st-***")
 
         if openai_api_key:
 
@@ -198,21 +229,32 @@ def new_qa():
             if user_query := st.chat_input(placeholder="Ask me anything!"):
                 st.chat_message("user").write(user_query)
                 st.session_state["messages_QA"].append({"role": "user", "content": user_query})
-                logging.info(f"[user]:{user_query}")
+                if show_tokens == "Yes":
+                    prompt_tokens = get_tokens(user_query, model)
+                    st.session_state.total_tokens += prompt_tokens
+                    tokens_count = st.empty()
+                    tokens_count.caption(f"""query used {prompt_tokens} tokens """)
+                # qa_logger.info(f"[user]:{user_query}")
 
                 with st.chat_message("assistant"):
                     retrieval_handler = PrintRetrievalHandler(st.container())
                     stream_handler = StreamHandler(st.empty())
                     response = qa_chain.run(user_query, callbacks=[retrieval_handler, stream_handler])
                     st.session_state["messages_QA"].append({"role": "assistant", "content": response})
-                    logging.info(f"[assistant]:{response}")
-
-                print(f"current message:{st.chat_message}")
-                print(f"current messages:{msgs}")
+                    if show_tokens == "Yes":
+                        prompt_tokens = get_tokens(response, model)
+                        st.session_state.total_tokens += prompt_tokens
+                        tokens_count = st.empty()
+                        tokens_count.caption(f"""query used {prompt_tokens} tokens """)
+                qa_logger.info(f"[user]:{user_query}")
+                qa_logger.info(f"[assistant]:{response}")
 
 
 # Run the Streamlit app
 if __name__ == "__main__":
-    print(f"in qa_docs.py, starting to run new_qa()")
-    print(f"st.session_state: {st.session_state}")
+    print("in qa_docs.py: starts")
+    print(f"looking for {log_name}")
+    # qa_logger = make_logger(log_name)
+    qa_logger = _get_logger(log_name)
+    print(f"logger set for a new {log_name}")
     new_qa()

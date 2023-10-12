@@ -36,6 +36,8 @@ from PIL import Image
 from utils import get_user_data
 
 TITLE: Final = "REFLEXIVE.AI"
+VERSION = "0.0.1"
+
 
 POST_REQUEST_URL_BASE: Final = "https://identitytoolkit.googleapis.com/v1/accounts:"
 post_request = partial(
@@ -214,7 +216,7 @@ def update_password_form() -> None:
     # Get the email and password from the user
     new_password = st.text_input("New password", key="new_password")
     # Attempt to log the user in
-    if not st.button("Update password"):
+    if not st.button("Update password", help="update your password"):
         return None
     user = auth.get_user_by_email(st.session_state["username"])
     auth.update_user(user.uid, password=new_password)
@@ -403,8 +405,7 @@ def login_panel(
     If the user clicks the "Logout" button, the reauthentication cookie and user-related information
     from the session state is deleted, and the user is logged out.
     """
-
-    if st.button("Logout"):
+    if st.button("Logout", help="quit session"):
         print(f"in logout from home:{st.session_state}")
         db = firestore.client()  # log in table
         obj = {"name": st.session_state["name"],
@@ -513,20 +514,10 @@ def app() -> None:
     if not user_df.empty:
         tmp_df = st.session_state['userdata']
         st.table(tmp_df)
-    print(st.session_state)
-    # st.write(st.session_state)
-    text_input = st.text_input(
-        "Enter comment 👇",
-        label_visibility=st.session_state.visibility,
-        disabled=st.session_state.disabled
-        )
-    print(text_input)
-    if text_input:
-        st.write(text_input)
-        # TO DO
-        # st.session_state['comment_widget'].append({
-        #     "created_at": datetime.now(),
-        #     "message": text_input})
+    # print(st.session_state)
+
+    # st.markdown(f"""#version {VERSION}""")
+
     st.markdown(
         """
         ---
@@ -580,11 +571,12 @@ def main() -> None:
         return None
 
     with st.sidebar:
+        st.markdown(f"""version {VERSION}""")
         login_panel(cookie_manager, cookie_name)
         show_pages([
-            Page("app.py", "Home"),
-            Page("simple_chat.py", "Virtual Insurance Agent"),
-            Page("qa_docs.py", "QA Docs")
+            Page("app.py", "Home: central hub"),
+            Page("simple_chat.py", "Virtual Insurance Agent: a chat with an Insurer Agent to answer reflexive questions"),
+            Page("qa_docs.py", "QA Docs: upload a PDF file and ask questions")
         ])
 
     return app()
@@ -592,5 +584,9 @@ def main() -> None:
 
 # Run the Streamlit app
 if __name__ == "__main__":
+    print("main starts")
     pathlib.Path("./app.log").unlink(missing_ok=True)
+    pathlib.Path("./chat.log").unlink(missing_ok=True)
+    pathlib.Path("./qa.log").unlink(missing_ok=True)
+
     main()

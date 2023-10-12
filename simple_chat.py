@@ -8,18 +8,49 @@ from datetime import datetime
 import logging
 from models import Tags0, extract_data
 from langchain.chat_models import ChatOpenAI
+from app import VERSION
 
-# Create and configure logger
-logging.basicConfig(
-    filename="app.log",
-    format='%(asctime)s %(message)s',
-    filemode='w', )
+log_name = "chat"
+#
+# # Create and configure logger
+# logging.basicConfig(
+#     filename=log_name,
+#     format='%(asctime)s %(message)s',
+#     filemode='w', )
+#
+# # Creating an object
+# logger = logging.getLogger()
+#
+# # Setting the threshold of logger to DEBUG
+# logger.setLevel(logging.INFO)
 
-# Creating an object
-logger = logging.getLogger()
 
-# Setting the threshold of logger to DEBUG
-logger.setLevel(logging.INFO)
+def make_logger(name):
+    handler = logging.FileHandler(filename=name + ".log")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    return logger
+
+
+def _get_logger(name):
+    loglevel = logging.INFO
+    l = logging.getLogger(name)
+    if not getattr(l, 'handler_set', None):
+        print("setting new logger")
+        l.setLevel(loglevel)
+        # h = logging.StreamHandler()
+        h = logging.FileHandler(filename=name + ".log")
+        f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        h.setFormatter(f)
+        l.addHandler(h)
+        l.setLevel(loglevel)
+        l.handler_set = True
+        l.propagate = False
+    return l
 
 
 def simple_chat():
@@ -39,7 +70,9 @@ def simple_chat():
         if 'pydantic_life_insurance_model' not in st.session_state:
             st.session_state.pydantic_life_insurance_model = user_details
 
-        if st.sidebar.button("Logout"):
+        st.sidebar.markdown(f"""version {VERSION}""")
+
+        if st.sidebar.button("Logout", help="quit session"):
             print("logout starts")
             db = firestore.client()  # log in table
             print(f"db: {db}")
@@ -81,27 +114,32 @@ def simple_chat():
         st.title("Reflexive AI")
         st.header("Virtual Insurance Agent Accelerator")
 
-        if st.sidebar.button("Download transcripts"):
-            download_transcript()
+        if st.sidebar.button("Download transcripts", help="download the chat history with the agent"):
+            download_transcript(log_name)
 
         model = st.sidebar.selectbox(
             label=":blue[MODEL]",
             options=["gpt-3.5-turbo",
-                     "gpt-4"])
+                     "gpt-4"],
+            help="openAI model(GPT-4 recommended)")
 
         systemprompt = st.sidebar.selectbox(
             label=":blue[AI Persona]",
             options=["Simple AI Assistant",
                      "mini questionnaire",
-                     "full questionnaire"])
+                     "full questionnaire"],
+            help="AI agent type")
 
-        show_tokens = st.sidebar.radio(label=":blue[Display tokens]", options=('Yes', 'No'))
+        show_tokens = st.sidebar.radio(label=":blue[Display tokens]",
+                                       options=('Yes', 'No'),
+                                       help="show the number of tokens used by the LLM")
 
         # Set API key if not yet
         openai_api_key = st.sidebar.text_input(
             ":blue[API-KEY]",
             placeholder="Paste your OpenAI API key here",
-            type="password")
+            type="password",
+            help="format is st-***")
 
         if openai_api_key:
 
@@ -111,9 +149,9 @@ def simple_chat():
                 st.session_state["openai_model"] = model
 
             # gpt-3.5-turbo is enough for the extraction chain
-            llm_extraction = ChatOpenAI(model_name="gpt-4",
-                                        openai_api_key=openai_api_key,
-                                        temperature=0)
+            # llm_extraction = ChatOpenAI(model_name="gpt-4",
+            #                             openai_api_key=openai_api_key,
+            #                             temperature=0)
 
             # initialization of the session_state
             if len(st.session_state["messages_chat"]) == 0:
@@ -163,7 +201,9 @@ def simple_chat():
                 print(f"extracted data: {st.session_state.pydantic_life_insurance_model}")
                 # add user message to chat history
                 st.session_state["messages_chat"].append({"role": "user", "content": prompt})
-                logging.info(f"[user]:{prompt}, # tokens:{prompt}")
+                # logging.info(f"[user]:{prompt}, # tokens:{prompt}")
+                print(f"your query :{prompt}")
+                chat_logger.info(f"[user]:{prompt}")
 
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
@@ -185,7 +225,8 @@ def simple_chat():
                         tokens_count.caption(f"""assistant used {assistant_tokens} tokens """)
                 # add assistant response to chat history
                 st.session_state["messages_chat"].append({"role": "assistant", "content": full_response})
-                logging.info(f"[assistant]:{prompt}, # tokens:{full_response}")
+                # logging.info(f"[assistant]:{prompt}, # tokens:{full_response}")
+                chat_logger.info(f"[assistant]:{full_response}")
                 # check for user response right at the beginning by looking at any message non-empty
                 if len(re.findall(r"summa[a-zA-Z]", full_response, re.I)) > 0:
                     current = extract_data(full_response, openai_api_key)
@@ -197,4 +238,6 @@ def simple_chat():
 if __name__ == "__main__":
     print(f"in simple_chat.py, starting to run simple_chat")
     # print(f"st.session_state: {st.session_state}")
+    # chat_logger = make_logger(log_name)
+    chat_logger = _get_logger(log_name)
     simple_chat()
