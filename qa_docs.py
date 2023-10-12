@@ -14,6 +14,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
+from models import Tags0
 from app import VERSION
 
 log_name = "qa"
@@ -126,6 +127,8 @@ def new_qa():
     if not st.session_state["logout"] or st.session_state["authentication_status"] is True:
         print(f"start of new_qa, st.session.state --> {st.session_state}")
 
+        user_details = Tags0()
+
         if 'qa_doc_api_key_set' not in st.session_state:
             st.session_state.qa_doc_api_key_set = False
             st.session_state.qa_doc_uploaded = False
@@ -135,6 +138,8 @@ def new_qa():
             st.session_state["messages_QA"] = []
         if 'total_tokens' not in st.session_state:
             st.session_state.total_tokens = 0
+        if 'pydantic_life_insurance_model' not in st.session_state:
+            st.session_state.pydantic_life_insurance_model = user_details
 
         st.sidebar.markdown(f"""version {VERSION}""")
 
@@ -144,6 +149,7 @@ def new_qa():
                    "username": st.session_state["username"],
                    "login_connection_time": st.session_state["login_connection_time"],
                    "messages_chat": st.session_state["messages_chat"],
+                   "pydantic_life_insurance_model": st.session_state.pydantic_life_insurance_model.dict(),
                    "messages_QA": st.session_state["messages_QA"],
                    "created_at": datetime.now()}
             doc_ref = db.collection(u'users_app').document()  # create a new document.ID
