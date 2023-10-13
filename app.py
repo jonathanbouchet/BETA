@@ -602,6 +602,9 @@ def main() -> None:
 # Run the Streamlit app
 if __name__ == "__main__":
     print("main starts")
+    print(f"this is the home directory from path: {os.path.dirname(os.path.realpath(__file__))}")
+    print(f"this is the home directory from getcwd(): {os.getcwd()}")
+    print(f"Files and directories in {os.getcwd()}: {os.listdir(os.getcwd())}")
     for name in ["chat.log", "qa.log"]:
         if os.path.exists(name):
             os.remove(name)
