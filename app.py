@@ -15,6 +15,7 @@ https://firebase.google.com/docs/admin/setup#initialize_the_sdk_in_non-google_en
 )
 """
 
+import os
 import math
 import time
 import pathlib
@@ -585,8 +586,11 @@ def main() -> None:
 # Run the Streamlit app
 if __name__ == "__main__":
     print("main starts")
-    pathlib.Path("./app.log").unlink(missing_ok=True)
-    pathlib.Path("./chat.log").unlink(missing_ok=True)
-    pathlib.Path("./qa.log").unlink(missing_ok=True)
+    for name in ["chat.log", "qa.log"]:
+        if os.path.exists(name):
+            os.remove(name)
+    # pathlib.Path("./app.log").unlink(missing_ok=True)
+    # pathlib.Path("./chat.log").unlink(missing_ok=True)
+    # pathlib.Path("./qa.log").unlink(missing_ok=True)
 
     main()
