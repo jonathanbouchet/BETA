@@ -298,6 +298,72 @@ def download_user_data(current_session_state: list) -> None:
     )
 
 
+def get_user_collection(collection_name: str, user_uid: str, num_records: int) -> (list, list):
+    """retrieve last 5 records data for user_id
+    :param num_records:
+    :param collection_name:
+    :param user_uid:
+    :return: list of collection data
+    """
+    db = firestore.client()
+    collection = db.collection(f"{collection_name}")
+    docs = collection.stream()
+    records = []
+    for doc in docs:
+        col = doc.to_dict()
+        if col['username'] == user_uid:
+            records.append({doc.id: doc.to_dict()})
+
+    records_reordered = []
+    for record in records:
+        records_reordered.append(list(record.values())[0])
+
+    newlist = sorted(records_reordered, key=lambda d: d['login_connection_time'])[-num_records:]
+    # print(newlist)
+    dates = []
+    vals = []
+    format_string = "%Y-%m-%d %H:%M:%S"
+    for n in newlist:
+        # obj = n['created_at']
+        obj = n['login_connection_time']
+        # print(obj)
+        # obj = int(obj.timestamp())
+        # obj = datetime.fromtimestamp(str(obj))
+        dates.append(obj.strftime(format_string))
+        n['created_at_timestamp'] = obj.strftime(format_string)
+        vals.append(n)
+    # print(dates)
+    return dates, vals
+
+
+def display_record(selected_date: str, user_records):
+    """
+    display selected_record by date
+    :param selected_date:
+    :param user_records:
+    :return:
+    """
+    # print(f"selected date: {selected_date} ")
+    for record in user_records:
+        if selected_date == record['created_at_timestamp']:
+            # st.json(record)
+            # json_string = json.dumps(record)
+            # st.json(json_string, expanded=True)
+            dict_you_want = {key: record[key] for key in ["created_at_timestamp", "username", "name",
+                                                          "messages_chat", "messages_QA"] if key in record.keys()}
+            st.json(dict_you_want)
+            # json_string = json.dumps(dict_you_want)
+            # st.json(json_string, expanded=True)
+            #
+            # st.download_button(
+            #     label="Download USER DATA JSON",
+            #     file_name=f"reflexive.ai-user-data-{str(selected_date)}.json",
+            #     mime="application/json",
+            #     data=json_string,
+            #     help="download data extracted as JSON file"
+            # )
+
+
 def summarize_chat(chats: list, openai_key: str) -> str:
     """
     sumamrize the previous interaction of the user on the app

@@ -31,10 +31,10 @@ import requests
 import streamlit as st
 from email_validator import EmailNotValidError, validate_email
 from firebase_admin import auth
-from st_pages import Page, show_pages, hide_pages
+from st_pages import Page, show_pages, hide_pages, add_page_title
 from firebase_admin import firestore
 from PIL import Image
-from utils import get_user_data
+from utils import get_user_data, get_user_collection, display_record
 
 TITLE: Final = "REFLEXIVE.AI"
 VERSION = "0.0.1"
@@ -515,9 +515,19 @@ def app() -> None:
     if not user_df.empty:
         tmp_df = st.session_state['userdata']
         st.table(tmp_df)
-    # print(st.session_state)
 
-    # st.markdown(f"""#version {VERSION}""")
+    max_records = 10
+    user_dates, user_records = get_user_collection("users_app", st.session_state['username'], max_records)
+    # user_dates = []
+    if len(user_dates) > 0:
+        # this user has at least 1 record to show
+        with st.form("display_record"):
+            record = st.selectbox(f':blue[Select record to display(last {max_records} records shown)]', tuple(user_dates))
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                display_record(record, user_records)
+    else:
+        st.text("No existing records")
 
     st.markdown(
         """
@@ -536,7 +546,13 @@ def main() -> None:
     is not logged in, no content other than the login form gets shown.
     """
     img = Image.open("reflexive_ai_logo.png")
-    st.set_page_config(page_title="Reflexive.ai", page_icon=img, initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Reflexive.ai",
+                       page_icon=img,
+                       initial_sidebar_state="collapsed",
+                       menu_items={
+                           'Get Help': "https://reflexive.ai",
+                           'Report a bug': "https://reflexive.ai",
+                           'About': "# REFLEXIVE.AI\n ## VIRTUAL AGENTS TO HELP YOU GROW YOUR BUSINESS \nhttps://reflexive.ai"})
     hide_pages([Page("simple_chat.py", "Virtual Insurance Agent"),
                 Page("qa_docs.py", "QA Documents")])
 
@@ -575,9 +591,9 @@ def main() -> None:
         st.markdown(f"""version {VERSION}""")
         login_panel(cookie_manager, cookie_name)
         show_pages([
-            Page("app.py", "Home: central hub"),
-            Page("simple_chat.py", "Virtual Insurance Agent: a chat with an Insurer Agent to answer reflexive questions"),
-            Page("qa_docs.py", "QA Docs: upload a PDF file and ask questions")
+            Page("app.py", "Home", "🏠"),
+            Page("simple_chat.py", "Virtual Insurance Agent", "🤖"),
+            Page("qa_docs.py", "QA Docs", "❓")
         ])
 
     return app()
